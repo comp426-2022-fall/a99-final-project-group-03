@@ -30,7 +30,11 @@ try {
 } catch (error) {}
 
 try {
-    db.exec(`CREATE TABLE fitness (id INTEGER PRIMARY KEY AUTOINCREMENT, userName VARCHAR, passWord VARCHAR);`);
+    db.exec(`CREATE TABLE fitness (id INTEGER PRIMARY KEY AUTOINCREMENT, user VARCHAR, time VARCHAR, type VARCHAR, date VARCHAR);`);
+} catch (error) {}
+
+try {
+    db.exec(`CREATE TABLE log (id INTEGER PRIMARY KEY AUTOINCREMENT, user VARCHAR, type VARCHAR, date VARCHAR);`);
 } catch (error) {}
 
 // Endpoints For Rendering Pages and Buttons
@@ -38,7 +42,7 @@ app.get('/', (req, res) => {
     res.render('login');
 });
 
-app.post('/login', (req, res) => {
+app.get('/login', (req, res) => {
     res.render('login')
 });
 
@@ -56,6 +60,9 @@ app.post('/enterLogin', (req, res) => {
         res.render('userName-incorrect2');
     }
     else {
+        const time = new Date(Date.now());
+        db.exec(`INSERT INTO log (user, type, date) VALUES ('${userName}', 'Login', '${time}')`);
+        req.app.set('user', userName);
         res.render('home');
     };
 });
@@ -73,27 +80,43 @@ app.post('/createAccount', (req, res) => {
     else {res.render('userName-incorrect')};
  });
 
-app.post('/returnLogin', (req, res) => {
+app.get('/returnLogin', (req, res) => {
     res.render('login');
 });
 
-app.post('/NewFitnessInfo', (req, res) => {
+app.get('/NewFitnessInfo', (req, res) => {
     res.render('new-fitness-info');
 });
 
-app.post('/enterWorkout', (req, res) => {
-    res.render('entry-success');
-});
+// app.post('/enterWorkout', (req, res) => {
+//     const time = req.body.time;
+//     const type = req.body.type;
+//     const date = req.body.date;
+//     let userName = req.app.get('user');
+//     db.exec(`INSERT INTO fitness (user, time, type, date) VALUES ('${userName}', '${time}', '${type}', '${date.toISOString()}')`)
+//     res.render('entry-success');
+// });
 
 app.post('/returnHome', (req, res) => {
     res.render('home');
 });
 
 app.post('/DeleteAcntPg', (req, res) => {
-    res.render('delete-account');
+    const userName = req.body.username;
+    const prepData = db.prepare(`SELECT * FROM users WHERE user = '${userName}'`);
+    let temp = prepData.get();
+
+    if (temp === undefined) {}
+    else {
+        db.exec(`DELETE FROM users WHERE user = '${userName}'`)
+        res.render('delete-account');
+    }
 });
 
 app.post('/logout', (req, res) => {
+    const time = new Date(Date.now());
+    let userName = req.app.get('user');
+    db.exec(`INSERT INTO log (user, type, date) VALUES ('${userName}', 'Logout', '${time}')`);
     res.render('logout');
 });
 
